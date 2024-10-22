@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Blackjack Game</title>
+</head>
+<body>
+    <h1>Blackjack</h1>
+    <p>Player Hand: {{ player_hand }} (Value: {{ player_value }})</p>
+    <p>Dealer Hand: {{ dealer_hand[0] }} (Hidden)</p>
+    <form action="/hit" method="post">
+        <button type="submit">Hit</button>
+    </form>
+    <form action="/stand" method="post">
+        <button type="submit">Stand</button>
+    </form>
+    <form action="/double" method="post">
+        <button type="submit">Double</button>
+    </form>
+    <form action="/split" method="post">
+        <button type="submit">Split</button>
+    </form>
+</body>
+</html>

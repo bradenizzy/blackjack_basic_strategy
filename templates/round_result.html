@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round Result</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top when content grows */
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow-y: auto; /* Add scroll if content overflows */
+            padding: 20px; /* Add padding to avoid content sticking to the top */
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+            margin-top: 20px; /* Extra space to prevent clipping at the top */
+            background: white; /* Background to make container distinct */
+        }
+
+        /* Different background colors based on the result */
+        .win {
+            background-color: #d4edda; /* Light green */
+            border: 2px solid #28a745; /* Darker green border */
+        }
+
+        .lose {
+            background-color: #f8d7da; /* Light red */
+            border: 2px solid #dc3545; /* Darker red border */
+        }
+
+        .push {
+            background-color: #fff3cd; /* Light yellow */
+            border: 2px solid #ffc107; /* Darker yellow border */
+        }
+
+        .bust {
+            background-color: #e2e3e5; /* Light gray */
+            border: 2px solid #6c757d; /* Darker gray border */
+        }
+
+        .card {
+            width: 100px;
+            height: 150px;
+            border: 2px solid black;
+            border-radius: 10px;
+            background-color: white;
+            display: inline-block;
+            margin: 5px;
+            position: relative;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .card-value {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .card-value-bottom {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .card.green {
+            border-color: green;
+            visibility: visible;  /* Player cards are always visible */
+        }
+
+        .card.red {
+            border-color: red;
+        }
+
+        .hidden-card {
+            visibility: hidden;  /* Initially hide dealer's card except the first one */
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .correct-feedback {
+            color: green;
+            animation: flash 1s ease-in-out;
+        }
+
+        @keyframes flash {
+            100% { opacity: 1; }
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Add a dynamic class to the container based on the result -->
+    <div id="result-container" class="container">
+        <!-- Initially hide the round result and dealer hand value -->
+        <h1 id="round-result" style="display: none;">{{ result | capitalize }}</h1>
+
+        <!-- Display Dealer Cards -->
+        <h2 id="dealer-hand-value" style="display: none;">Dealer Hand (Value: {{ dealer_value }}):</h2>
+        <div id="dealer-cards">
+            <!-- The first card is always visible -->
+            <div id="dealer-card-0" class="card red">
+                <div class="card-value">{{ dealer_hand[0] }}</div>
+                <div class="card-value-bottom">{{ dealer_hand[0] }}</div>
+            </div>
+
+            <!-- The rest of the dealer cards are initially hidden -->
+            {% for index, card in enumerate(dealer_hand[1:]) %}
+                <div id="dealer-card-{{ index + 1 }}" class="card red hidden-card">
+                    <div class="card-value">{{ card }}</div>
+                    <div class="card-value-bottom">{{ card }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Display All Player Hands -->
+        {% for index, hand in enumerate(player_hands) %}
+            <h2>Player Hand {{ index + 1 }} (Value: {{ player_hand_values[index] }}):</h2>
+            <div id="player-cards-{{ index }}">
+                {% for card in hand %}
+                    <div class="card green">
+                        <div class="card-value">{{ card }}</div>
+                        <div class="card-value-bottom">{{ card }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <!-- Feedback Message -->
+        {% if feedback %}
+            <p id="feedback" class="correct-feedback"><strong>{{ feedback }}</strong></p>
+        {% endif %}
+
+        <h3 id="running-count" style="display: none;">COUNT: {{ count }}</h3>
+
+        <form action="/start_round" method="get">
+            <button type="submit">Next Round</button>
+        </form>
+    </div>
+
+    <!-- JavaScript to Reveal Dealer Cards One-by-One and Display Result Afterward -->
+    <script>
+        window.onload = function() {
+            // Hide the feedback element after 2 seconds
+            const feedbackElement = document.getElementById('feedback');
+            if (feedbackElement) {
+                setTimeout(() => {
+                    feedbackElement.style.display = 'none';
+                }, 2000); // 2000 milliseconds = 2 seconds
+            }
+
+            // Reveal dealer cards one by one with a 1-second delay (starting from the second card)
+            const dealerCards = document.querySelectorAll('#dealer-cards .hidden-card');
+            let delay = 1000; // Start with a delay of 1 second
+
+            dealerCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.visibility = 'visible';
+                }, delay);
+                delay += 1000; // Increment delay for each card
+            });
+
+            // Show the result cues after the last card has been revealed
+            setTimeout(() => {
+                // Show the round result and dealer hand value
+                const roundResultElement = document.getElementById('round-result');
+                const dealerHandValueElement = document.getElementById('dealer-hand-value');
+                const resultContainer = document.getElementById('result-container');
+                const countElement = document.getElementById('running-count');
+
+                if (roundResultElement) {
+                    roundResultElement.style.display = 'block';
+                }
+                if (dealerHandValueElement) {
+                    dealerHandValueElement.style.display = 'block';
+                }
+                if (countElement) {
+                    countElement.style.display = 'block';
+                }
+                // Add the appropriate class to the container based on the result
+                resultContainer.classList.add('{{ result }}');
+            }, delay); // Use the accumulated delay to ensure it runs after all cards are revealed
+        };
+    </script>
+</body>
+</html>
