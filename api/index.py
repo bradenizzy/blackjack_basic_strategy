@@ -1,4 +1,4 @@
-# blackjack.py
+# index.py
 
 from flask import Flask, render_template, request, redirect, url_for, session
 import random
@@ -19,7 +19,7 @@ TRUE_COUNT = 0
 player_hands = []
 current_hand_index = 0
 dealer_hand = []
-game_stats = {"correct":0,"incorrect":0,"wins": 0, "losses": 0, "ties": 0, "rounds_played": 0}
+game_stats = {"correct": 0, "incorrect": 0, "wins": 0, "losses": 0, "ties": 0, "rounds_played": 0}
 NUM_DECKS = 6  # Default value, but will be set in the game flow
 
 def update_running_count(card):
@@ -389,5 +389,5 @@ def basic_strategy(player_hand, dealer_value):
     else:
         return "Hit"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run()
